@@ -13,7 +13,7 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 /**
- * Function to get the authentication token from cookies
+ * Function to get the a   uthentication token from cookies
  */
 const getServerToken = (): string | undefined => {
   return Cookies.get("token");
@@ -56,7 +56,7 @@ apiClient.interceptors.response.use(
       console.error(`API Error [${status}]:`, data?.message || "Unknown error");
 
       if (status === 401 || status === 403) {
-        window.location.href = "/admin"
+        window.location.href = "/admin";
         console.warn("Unauthorized! Redirect to login...");
       } else if (status >= 500) {
         console.warn("Server error! Try again later.");
@@ -77,8 +77,13 @@ export interface ApiResponse<T> {
 }
 
 const RestAPI = {
-  get: <T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> =>
-    apiClient.get(url, config),
+  get: <T>(
+    url: string,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> => {
+    console.log(url);
+    return apiClient.get(url, config);
+  },
 
   post: <T>(
     url: string,
