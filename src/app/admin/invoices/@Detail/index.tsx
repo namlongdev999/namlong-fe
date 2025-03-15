@@ -10,34 +10,38 @@ export default function Detail({ data }) {
     customer_tax,
     customer_name,
     total,
-    price_tax,
+    tax,
     expenses,
     cash_back,
     signed_date,
     created_date,
   } = data;
 
-  const expense = expenses?.reduce((t, r) => t + (r.expense ?? 0), 0);
+  // const expense = expenses?.reduce((t, r) => t + (r.expense ?? 0), 0);
+  const expense = expenses?.reduce(
+    (t, r) => t + (r.amount * r.price - r.amount * r.price * (r.tax / 100)),
+    0
+  );
 
   return (
     <Grid gutter="xs">
-      <Grid.Col span={12}>
+      {/* <Grid.Col span={12}>
         <Text className="text-gray-600">Tên cung cấp:</Text>
         <Text fw={700}>{supplier_name}</Text>
       </Grid.Col>
       <Grid.Col span={12}>
         <Text className="text-gray-600">MST cung cấp:</Text>
         <Text fw={700}>{supplier_tax}</Text>
-      </Grid.Col>
+      </Grid.Col> */}
 
       <Grid.Col span={12}>
         <Text className="text-gray-600">Tên khách hàng:</Text>
         <Text fw={700}>{customer_name}</Text>
       </Grid.Col>
-      <Grid.Col span={12}>
+      {/* <Grid.Col span={12}>
         <Text className="text-gray-600">MST khách hàng:</Text>
         <Text fw={700}>{customer_tax}</Text>
-      </Grid.Col>
+      </Grid.Col> */}
       <Grid.Col span={12}>
         <Text className="text-gray-600">Ngày ký:</Text>
         <Text fw={700}>{dayjs(signed_date).format("DD/MM/YYYY")}</Text>
@@ -51,10 +55,10 @@ export default function Detail({ data }) {
         </Text>
       </Grid.Col>
       <Grid.Col span={6}>
-        <Text className="text-gray-600">Thuế:</Text>
+        <Text className="text-gray-600">Tiền thuế:</Text>
         <Text fw={700}>
           <NumberFormatter
-            value={price_tax}
+            value={(total * tax) / 100}
             thousandSeparator
             decimalScale={2}
           />{" "}
@@ -88,18 +92,44 @@ export default function Detail({ data }) {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Tiêu đề</Table.Th>
-              <Table.Th>Nội dung</Table.Th>
+              <Table.Th>Số lượng</Table.Th>
               <Table.Th>Tiền</Table.Th>
+              <Table.Th>Thuế</Table.Th>
+              <Table.Th>Tổng</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {expenses?.map((v, i) => (
               <Table.Tr key={i}>
                 <Table.Td>{v.title}</Table.Td>
-                <Table.Td>{v.desc}</Table.Td>
                 <Table.Td>
                   <NumberFormatter
-                    value={v.expense}
+                    value={v.amount}
+                    thousandSeparator
+                    decimalScale={2}
+                  />
+                </Table.Td>
+                <Table.Td>
+                  <NumberFormatter
+                    value={v.price}
+                    thousandSeparator
+                    decimalScale={2}
+                  />{" "}
+                  VND
+                </Table.Td>
+                <Table.Td>
+                  <NumberFormatter
+                    value={v.tax}
+                    thousandSeparator
+                    decimalScale={2}
+                  />{" "}
+                  %
+                </Table.Td>
+                <Table.Td>
+                  <NumberFormatter
+                    value={
+                      v.amount * v.price - v.amount * v.price * (v.tax / 100)
+                    }
                     thousandSeparator
                     decimalScale={2}
                   />{" "}
@@ -110,11 +140,11 @@ export default function Detail({ data }) {
           </Table.Tbody>
         </Table>
       </Grid.Col>
-      <Grid.Col span={12}>
+      <Grid.Col className="text-right" span={12}>
         <Text className="text-gray-600">Tổng còn lại:</Text>
-        <Text fw={700} className="font-medium text-green-600">
+        <Text fw={700} className="!text-xl !text-green-600">
           <NumberFormatter
-            value={total - price_tax - expense - cash_back}
+            value={total - (total * tax) / 100 - expense - cash_back}
             thousandSeparator
             decimalScale={2}
           />{" "}
