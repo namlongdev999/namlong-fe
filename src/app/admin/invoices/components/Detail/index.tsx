@@ -49,7 +49,7 @@ export default function Detail({ data }) {
 
       <Grid.Col span={6}>
         <Text className="text-gray-600">Tổng tiền:</Text>
-        <Text fw={700}>
+        <Text fw={700} className="!text-red-500">
           <NumberFormatter value={total} thousandSeparator decimalScale={2} />{" "}
           VND
         </Text>
@@ -95,7 +95,7 @@ export default function Detail({ data }) {
               <Table.Th>Số lượng</Table.Th>
               <Table.Th>Tiền</Table.Th>
               <Table.Th>Thuế</Table.Th>
-              <Table.Th>Tổng</Table.Th>
+              <Table.Th>Tổng sau thuế</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

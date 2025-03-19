@@ -10,6 +10,8 @@ import {
 } from "@tabler/icons-react";
 import { Code, Group, NavLink, ScrollArea } from "@mantine/core";
 import "./index.css";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const mockdata = [
   { label: "Dashboard", icon: IconGauge },
@@ -48,12 +50,14 @@ const mockdata = [
 ];
 
 export function NavbarNested() {
+  const { push } = useRouter();
   // const links = mockdata.map((item) => <LinksGroup {...item} key={item.label} />);
 
   return (
     <nav className="navbar">
       <ScrollArea className="links">
-        <NavLink label="Hóa đơn" active/>
+          <NavLink href="/admin/invoices" label="Hóa đơn" active  component={Link}/>
+          <NavLink href="/admin/customers" label="Khách hàng" component={Link}/>
         {/* <NavLink
           href="#required-for-focus"
           label="First parent link"

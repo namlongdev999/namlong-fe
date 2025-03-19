@@ -1,15 +1,13 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import InvoiceForm from "./@Form";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import InvoiceForm from "./components/Compose";
 import {
   ActionIcon,
-  Blockquote,
   Button,
   Combobox,
-  Drawer,
   Flex,
   Group,
+  LoadingOverlay,
   Modal,
   NumberFormatter,
   Paper,
@@ -24,10 +22,14 @@ import { IconPlus } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { useRestApi } from "../../../service/hook";
 import Layout from "../../../components/Layout";
+import { useQueryParams } from "../../../hooks/useQueryParams";
 import dayjs from "dayjs";
 import { useMediaQuery } from "@mantine/hooks";
-import Detail from "./@Detail";
+import Detail from "./components/Detail";
 import { MonthPickerInput } from "@mantine/dates";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+
+dayjs.extend(localizedFormat);
 
 const Action = ({ onDetail, onEdit }) => {
   const combobox = useCombobox({
@@ -66,7 +68,15 @@ const Invoices = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const [logData, handleLogData] = useState({ type: "", data: undefined });
   const { data, get, post, loading } = useRestApi();
+  const {
+    data: customerList,
+    get: getCutomerList,
+    loading: loadingCustomerList,
+  } = useRestApi();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const [filters = { date: dayjs().format("YYYY-MM-DD") }, changeFilters]: any =
+    useQueryParams(["date", "customer"]);
+  const params = new URLSearchParams(filters).toString();
 
   const handleClose = () => {
     close();
@@ -75,9 +85,35 @@ const Invoices = () => {
 
   const handleSubmit = async (values) => {
     try {
+      const { cash_back, customer, signed_date, tax, total, expenses } = values;
+      console.log({
+        customer,
+        total,
+        tax,
+        cash_back,
+        signed_date: dayjs(signed_date).toISOString(),
+        expenses: expenses.map((v) => ({
+          title: v.title,
+          desc: v.desc,
+          amount: v.amount,
+          price: v.price,
+          tax: v.tax,
+        })),
+      });
+
       await post("/invoices", {
-        ...values,
-        signed_date: dayjs(values.signed_date).toISOString(),
+        customer,
+        total,
+        tax,
+        cash_back,
+        signed_date: dayjs(signed_date).toISOString(),
+        expenses: expenses.map((v) => ({
+          title: v.title,
+          desc: v.desc,
+          amount: v.amount,
+          price: v.price,
+          tax: v.tax,
+        })),
       });
       handleClose();
       get("/invoices");
@@ -93,8 +129,14 @@ const Invoices = () => {
     );
     return (
       <Table.Tr key={v._id}>
-        {/* <Table.Td>{v.supplier_name}</Table.Td> */}
         <Table.Td>{v.customer_name}</Table.Td>
+        <Table.Td>
+          <NumberFormatter
+            value={v.revenue_total}
+            thousandSeparator
+            decimalScale={2}
+          />
+        </Table.Td>
         <Table.Td>
           <NumberFormatter value={v.total} thousandSeparator decimalScale={2} />
         </Table.Td>
@@ -115,14 +157,7 @@ const Invoices = () => {
             decimalScale={2}
           />
         </Table.Td>
-        <Table.Td>
-          <NumberFormatter
-            value={v.total - (v.total * v.tax) / 100 - expense - v.cash_back}
-            thousandSeparator
-            decimalScale={2}
-          />
-        </Table.Td>
-        <Table.Td>
+        <Table.Td className="sticky right-0 z-10 bg-sky-50 text-center">
           <Action
             onDetail={() => {
               open();
@@ -135,14 +170,39 @@ const Invoices = () => {
     );
   });
 
+  const overviewData = useMemo(() => {
+    return (
+      data?.reduce(
+        (t, v) => ({
+          total: t.total + v.total,
+          revenueTotal: t.revenueTotal + v.revenue_total,
+        }),
+        { total: 0, revenueTotal: 0 }
+      ) ?? { total: 0, revenueTotal: 0 }
+    );
+  }, [JSON.stringify(data)]);
+
+  const handleChangeDate = (d) => {
+    changeFilters({ ...filters, date: dayjs(d).format("YYYY-MM-DD") });
+  };
+
+  const handleChangeCustomer = (c) => {
+    changeFilters({ ...filters, customer: c });
+  };
+
   useEffect(() => {
-    get("/invoices");
+    get(`/invoices?${params}`);
+  }, [params]);
+
+  useEffect(() => {
+    getCutomerList("/customers");
   }, []);
 
   return (
     <Layout>
+      <LoadingOverlay visible={loading || loadingCustomerList} />
       <Flex direction="row" justify="space-between" align="center">
-        <Title>Danh sách hóa đơn</Title>
+        <Title className="text-blue-500">Danh sách hóa đơn</Title>
 
         {isMobile ? (
           <ActionIcon
@@ -161,17 +221,25 @@ const Invoices = () => {
       </Flex>
       <Space h="md" />
 
-      <Flex gap="md">
+      <Flex gap="md" pos="relative">
         <MonthPickerInput
-          label="Chọn tháng"
+          label="Tháng ký HD"
           monthsListFormat="MM"
           valueFormat="MM/YYYY"
-          placeholder="Chọn tháng"
+          placeholder="Tháng ký HD"
+          defaultValue={dayjs(filters.date).toDate()}
+          onChange={handleChangeDate}
         />
         <Select
-          label="Chọn tên khách hàng"
-          placeholder="Pick value"
-          data={["Trường tiểu học A", "Trường tiểu học B", "Trường tiểu học C"]}
+          label="Tên khách hàng"
+          placeholder="Tên khách hàng"
+          data={customerList?.map((v) => ({
+            value: v.tax_number,
+            label: v.name,
+          }))}
+          value={filters?.customer}
+          onChange={handleChangeCustomer}
+          clearable
         />
       </Flex>
       <Space h="md" />
@@ -179,68 +247,48 @@ const Invoices = () => {
         <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
           <Text size="sm">Tổng tiền</Text>
           <Group gap="xs">
-            {/* {prefix && <Text size="xl">{prefix}</Text>} */}
-            {/* <Text c="green">123123</Text> */}
             <NumberFormatter
               suffix=" VND"
               className="text-lg font-semibold text-red-500"
-              value={300000000}
+              value={overviewData.total}
               thousandSeparator
               decimalScale={2}
             />
-            {/* {suffix && <Text size="xl">{suffix}</Text>} */}
           </Group>
         </Paper>
         <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
           <Text size="sm">Tổng tiền còn lại</Text>
           <Group gap="xs">
-            {/* {prefix && <Text size="xl">{prefix}</Text>} */}
-            {/* <Text c="green">123123</Text> */}
             <NumberFormatter
               suffix=" VND"
               className="text-lg font-semibold text-green-500"
-              value={100000000}
+              value={overviewData.revenueTotal}
               thousandSeparator
               decimalScale={2}
             />
-            {/* {suffix && <Text size="xl">{suffix}</Text>} */}
           </Group>
         </Paper>
       </Flex>
       <Space h="md" />
 
-      {/* <Group grow wrap="nowrap">
-        <Card withBorder radius="md" padding="xl">
-          <Text fz="xs" tt="uppercase" fw={700} c="dimmed">
-            Tổng
-          </Text>
-          <Text fz="lg" fw={500}>
-            10000000
-          </Text>
-        </Card>
-
-        <Card withBorder radius="md" padding="xl">
-          <Text fz="xs" tt="uppercase" fw={700} c="dimmed">
-            Tổng còn lại
-          </Text>
-          <Text fz="lg" fw={500}>
-            5000000
-          </Text>
-        </Card>
-      </Group> */}
-
       <Table.ScrollContainer minWidth={1080} h={500}>
-        <Table withTableBorder stickyHeader>
+        <Table
+          withTableBorder
+          stickyHeader
+          highlightOnHover
+          highlightOnHoverColor="#f0f9ff"
+        >
           <Table.Thead>
             <Table.Tr>
-              {/* <Table.Th className="w-[240px]">Tên cung cấp</Table.Th> */}
               <Table.Th className="w-[240px]">Tên khách hàng</Table.Th>
+              <Table.Th className="w-[140px]">Tổng còn lại</Table.Th>
               <Table.Th className="w-[140px]">Tổng tiền</Table.Th>
               <Table.Th className="w-[140px]">Tiền thuế</Table.Th>
               <Table.Th className="w-[140px]">Tổng chi phí</Table.Th>
               <Table.Th className="w-[140px]">Gửi lại</Table.Th>
-              <Table.Th className="w-[140px]">Tổng còn lại</Table.Th>
-              <Table.Th className="w-[100px]">Thao tác</Table.Th>
+              <Table.Th className="w-[100px] sticky right-0 z-10 bg-sky-50 !text-center">
+                Thao tác
+              </Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>{rows}</Table.Tbody>

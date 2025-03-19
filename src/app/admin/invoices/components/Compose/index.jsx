@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { use, useEffect } from "react";
 import { useForm } from "@mantine/form";
 import "dayjs/locale/vi";
 import {
@@ -12,45 +12,27 @@ import {
   ActionIcon,
   Text,
   Grid,
+  Select,
+  LoadingOverlay,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { randomId, useDebouncedCallback } from "@mantine/hooks";
 import { IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
+import { useRestApi } from "../../../../../service/hook";
+import RestAPI from "../../../../../service";
 
-interface FormValue {
-  supplier_name: string;
-  supplier_tax: string;
-  customer_name: string;
-  customer_tax: string;
-  total: number;
-  tax: number;
-  cash_back: number;
-  signed_date: any;
-  expenses: {
-    title: string;
-    desc: string;
-    price: number;
-    tax: number;
-    amount: number;
-    total?: number;
-    key: string;
-  }[];
-}
+export default function SupplierForm({ loading, onSubmit }) {
+  const {
+    data: customerList,
+    get,
+    loading: loadingCustomerList,
+  } = useRestApi();
 
-interface Props {
-  loading: boolean;
-  onSubmit: (v: FormValue) => void;
-}
-
-export default function SupplierForm({ loading, onSubmit }: Props) {
   const form = useForm({
     mode: "uncontrolled",
     initialValues: {
-      supplier_name: "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ GIÁO DỤC NAM LONG",
-      supplier_tax: "",
-      customer_name: "",
-      customer_tax: "",
+      customer: "",
       total: 0,
       tax: 10,
       cash_back: 0,
@@ -69,13 +51,9 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
     },
 
     validate: {
-      supplier_name: (value) => (value ? null : "Vui lòng nhập"),
-      supplier_tax: (value) => (value ? null : "Vui lòng nhập"),
-      customer_name: (value) => (value ? null : "Vui lòng nhập"),
-      customer_tax: (value) => (value ? null : "Vui lòng nhập"),
+      customer: (value) => (value ? null : "Vui lòng nhập"),
       total: (value) => (value > 0 ? null : "Không hợp lê"),
       tax: (value) => (value >= 0 ? null : "Không hợp lê"),
-      cash_back: (value) => (value > 0 ? null : "Không hợp lê"),
       signed_date: (value) => (value ? null : "Vui lòng nhập"),
       expenses: {
         title: (value) => (value ? null : "Vui lòng nhập"),
@@ -95,36 +73,33 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
     // }),
   });
 
-  const handleTotalPriceChange = useDebouncedCallback(
-    (index: number, key: string, value: number) => {
-      const tax = form.getValues().expenses[index]?.tax || 0;
-      const price = form.getValues().expenses[index]?.price || 0;
-      const amount = form.getValues().expenses[index]?.amount || 0;
-      switch (key) {
-        case "amount":
-          form.setFieldValue(
-            `expenses.${index}.total`,
-            value * price - value * price * (tax / 100)
-          );
-          break;
-        case "price":
-          form.setFieldValue(
-            `expenses.${index}.total`,
-            value * amount - value * amount * (tax / 100)
-          );
-          break;
-        case "tax":
-          form.setFieldValue(
-            `expenses.${index}.total`,
-            price * amount - price * amount * (value / 100)
-          );
-          break;
-        default:
-          break;
-      }
-    },
-    500
-  );
+  const handleTotalPriceChange = useDebouncedCallback((index, key, value) => {
+    const tax = form.getValues().expenses[index]?.tax || 0;
+    const price = form.getValues().expenses[index]?.price || 0;
+    const amount = form.getValues().expenses[index]?.amount || 0;
+    switch (key) {
+      case "amount":
+        form.setFieldValue(
+          `expenses.${index}.total`,
+          value * price - value * price * (tax / 100)
+        );
+        break;
+      case "price":
+        form.setFieldValue(
+          `expenses.${index}.total`,
+          value * amount - value * amount * (tax / 100)
+        );
+        break;
+      case "tax":
+        form.setFieldValue(
+          `expenses.${index}.total`,
+          price * amount - price * amount * (value / 100)
+        );
+        break;
+      default:
+        break;
+    }
+  }, 500);
 
   const fields = form.getValues().expenses.map((item, index) => {
     const { onChange: onChangePriceField, ...priceField } = {
@@ -159,7 +134,7 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
                 {...amountField}
                 onChange={(value) => {
                   onChangeAmountField(value);
-                  handleTotalPriceChange(index, "amount", value as number);
+                  handleTotalPriceChange(index, "amount", value);
                 }}
               />
             </Grid.Col>
@@ -174,7 +149,7 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
                 hideControls
                 onChange={(value) => {
                   onChangePriceField(value);
-                  handleTotalPriceChange(index, "price", value as number);
+                  handleTotalPriceChange(index, "price", value);
                 }}
               />
             </Grid.Col>
@@ -192,7 +167,7 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
                 hideControls
                 onChange={(value) => {
                   onChangeTaxField(value);
-                  handleTotalPriceChange(index, "tax", value as number);
+                  handleTotalPriceChange(index, "tax", value);
                 }}
               />
             </Grid.Col>
@@ -222,42 +197,26 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
     );
   });
 
-  const handleSubmit = async (v: FormValue) => {
-    onSubmit(v);
-  };
+  useEffect(() => {
+    get("/customers");
+  }, []);
 
   return (
     <Container size="md">
-      <form noValidate onSubmit={form.onSubmit(handleSubmit)}>
-        {/* <TextInput
-          label="Tên cung cấp"
-          placeholder="Tên cung cấp"
-          key={form.key("supplier_name")}
-          {...form.getInputProps("supplier_name")}
-          required
-        />
-
-        <TextInput
-          label="MST cung cấp"
-          placeholder="MST cung cấp"
-          key={form.key("supplier_tax")}
-          {...form.getInputProps("supplier_tax")}
-          required
-        /> */}
-
-        <TextInput
+      <LoadingOverlay visible={loadingCustomerList || loading} />
+      <form noValidate onSubmit={form.onSubmit(onSubmit)}>
+        <Select
           label="Tên khách hàng"
           placeholder="Tên khách hàng"
-          {...form.getInputProps("customer_name")}
+          data={customerList?.map((v) => ({
+            value: v.tax_number,
+            label: v.name,
+          }))}
+          {...form.getInputProps("customer")}
           required
+          maxDropdownHeight={200}
+          searchable
         />
-
-        {/* <TextInput
-          label="MST khách hàng"
-          placeholder="MST khách hàng"
-          {...form.getInputProps("customer_tax")}
-          required
-        /> */}
 
         <NumberInput
           label="Tổng tiền"
@@ -267,15 +226,6 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
           required
           hideControls
         />
-
-        {/* <NumberInput
-          label="Thuế"
-          placeholder="Nhập số tiền"
-          thousandSeparator=","
-          {...form.getInputProps("tax")}
-          required
-          hideControls
-        /> */}
 
         <NumberInput
           label="Thuế"
@@ -290,7 +240,7 @@ export default function SupplierForm({ loading, onSubmit }: Props) {
           hideControls
           // onChange={(value) => {
           //   onChangeTaxField(value);
-          //   handleTaxChange(index, value as number);
+          //   handleTaxChange(index, value);
           // }}
         />
 

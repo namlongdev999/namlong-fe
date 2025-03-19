@@ -10,7 +10,7 @@ import Cookies from "js-cookie";
  * API Base URL - Change this to your actual API base URL
  */
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/v1/api";
 
 /**
  * Function to get the a   uthentication token from cookies
@@ -81,7 +81,6 @@ const RestAPI = {
     url: string,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> => {
-    console.log(url);
     return apiClient.get(url, config);
   },
 

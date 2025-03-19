@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { login } from "./@service";
+import { login } from "./services";
 import { useRouter } from "next/navigation";
 
 const App = () => {
