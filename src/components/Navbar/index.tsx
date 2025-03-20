@@ -56,8 +56,9 @@ export function NavbarNested() {
   return (
     <nav className="navbar">
       <ScrollArea className="links">
-          <NavLink href="/admin/invoices" label="Hóa đơn" active  component={Link}/>
-          <NavLink href="/admin/customers" label="Khách hàng" component={Link}/>
+          <NavLink href="/admin/invoices" label="Danh sách hóa đơn"  component={Link}/>
+          <NavLink href="/admin/investments" label="Danh sách đầu tư" component={Link}/>
+          <NavLink href="/admin/customers" label="Danh sách khách hàng" component={Link}/>
         {/* <NavLink
           href="#required-for-focus"
           label="First parent link"

@@ -86,20 +86,6 @@ const Invoices = () => {
   const handleSubmit = async (values) => {
     try {
       const { cash_back, customer, signed_date, tax, total, expenses } = values;
-      console.log({
-        customer,
-        total,
-        tax,
-        cash_back,
-        signed_date: dayjs(signed_date).toISOString(),
-        expenses: expenses.map((v) => ({
-          title: v.title,
-          desc: v.desc,
-          amount: v.amount,
-          price: v.price,
-          tax: v.tax,
-        })),
-      });
 
       await post("/invoices", {
         customer,
@@ -132,6 +118,7 @@ const Invoices = () => {
         <Table.Td>{v.customer_name}</Table.Td>
         <Table.Td>
           <NumberFormatter
+            className="text-green-500 font-bold"
             value={v.revenue_total}
             thousandSeparator
             decimalScale={2}

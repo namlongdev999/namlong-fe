@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect } from "react";
-import { Flex, LoadingOverlay, Space, Table, Title } from "@mantine/core";
+import { Anchor, Flex, LoadingOverlay, Space, Table, Title } from "@mantine/core";
 import { useRestApi } from "../../../service/hook";
 import Layout from "../../../components/Layout";
+import Link from "next/link";
 
 const Invoices = () => {
   const {
@@ -18,7 +19,15 @@ const Invoices = () => {
     );
     return (
       <Table.Tr key={v._id}>
-        <Table.Td>{v.tax_number}</Table.Td>
+        <Table.Td>
+          <Anchor
+            component={Link}
+            href={`/admin/invoices?customer=${v.tax_number}`}
+            underline="hover"
+          >
+            {v.tax_number}
+          </Anchor>
+        </Table.Td>
         <Table.Td>{v.name}</Table.Td>
         <Table.Td>{v.address}</Table.Td>
       </Table.Tr>
