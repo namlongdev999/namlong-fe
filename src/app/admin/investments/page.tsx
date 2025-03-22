@@ -1,16 +1,14 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import InvoiceForm from "./components/Compose";
 import {
   ActionIcon,
   Anchor,
   Button,
   Flex,
-  Group,
   LoadingOverlay,
   Modal,
   NumberFormatter,
-  Paper,
   Select,
   Space,
   Table,
@@ -48,8 +46,6 @@ const Invoices = () => {
 
   const handleSubmit = async (values) => {
     try {
-      console.log(values);
-
       const { customer_tax, investment_total, from_date, to_date } = values;
 
       await post("/investments", {
@@ -64,9 +60,6 @@ const Invoices = () => {
       console.log(e);
     }
   };
-
-  console.log(data);
-  
 
   const rows = data?.map((v) => {
     return (
@@ -124,60 +117,64 @@ const Invoices = () => {
 
   return (
     <Layout>
-      <LoadingOverlay visible={loading || loadingCustomerList} />
-      <Flex direction="row" justify="space-between" align="center">
-        <Title className="text-blue-500">Danh sách hóa đơn</Title>
+      <div className="relative">
+        <LoadingOverlay visible={loading || loadingCustomerList} />
+        <Flex direction="row" justify="space-between" align="center">
+          <Title order={2} className="text-blue-500">
+            Danh sách đầu tư
+          </Title>
 
-        {isMobile ? (
-          <ActionIcon
-            variant="outline"
-            size="lg"
-            aria-label="Create"
-            onClick={open}
+          {isMobile ? (
+            <ActionIcon
+              variant="outline"
+              size="lg"
+              aria-label="Create"
+              onClick={open}
+            >
+              <IconPlus />
+            </ActionIcon>
+          ) : (
+            <Button leftSection={<IconPlus />} variant="outline" onClick={open}>
+              Tạo mới
+            </Button>
+          )}
+        </Flex>
+        <Space h="md" />
+
+        <Flex gap="md" pos="relative">
+          <Select
+            label="Tên khách hàng"
+            placeholder="Tên khách hàng"
+            data={customerList?.map((v) => ({
+              value: v.tax_number,
+              label: v.name,
+            }))}
+            value={filters?.customer}
+            onChange={handleChangeCustomer}
+            clearable
+          />
+        </Flex>
+        <Space h="md" />
+
+        <Table.ScrollContainer minWidth={680} h={500}>
+          <Table
+            withTableBorder
+            stickyHeader
+            highlightOnHover
+            highlightOnHoverColor="#f0f9ff"
           >
-            <IconPlus />
-          </ActionIcon>
-        ) : (
-          <Button leftSection={<IconPlus />} variant="outline" onClick={open}>
-            Tạo mới hóa đơn
-          </Button>
-        )}
-      </Flex>
-      <Space h="md" />
-
-      <Flex gap="md" pos="relative">
-        <Select
-          label="Tên khách hàng"
-          placeholder="Tên khách hàng"
-          data={customerList?.map((v) => ({
-            value: v.tax_number,
-            label: v.name,
-          }))}
-          value={filters?.customer}
-          onChange={handleChangeCustomer}
-          clearable
-        />
-      </Flex>
-      <Space h="md" />
-
-      <Table.ScrollContainer minWidth={680} h={500}>
-        <Table
-          withTableBorder
-          stickyHeader
-          highlightOnHover
-          highlightOnHoverColor="#f0f9ff"
-        >
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th className="w-[300px]">Tên khách hàng</Table.Th>
-              <Table.Th className="w-[140px]">Tổng đầu tư</Table.Th>
-              <Table.Th className="w-[120px]">Từ ngày</Table.Th>
-              <Table.Th className="w-[120px]">Đến ngày</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th className="w-[300px]">Tên khách hàng</Table.Th>
+                <Table.Th className="w-[140px]">Tổng đầu tư</Table.Th>
+                <Table.Th className="w-[120px]">Từ ngày</Table.Th>
+                <Table.Th className="w-[120px]">Đến ngày</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>{rows}</Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </div>
       <Modal
         opened={opened}
         onClose={handleClose}

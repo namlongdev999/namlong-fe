@@ -16,7 +16,7 @@ import {
   LoadingOverlay,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { randomId, useDebouncedCallback } from "@mantine/hooks";
+import { randomId, useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
 import { IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRestApi } from "../../../../../service/hook";
@@ -28,6 +28,8 @@ export default function SupplierForm({ loading, onSubmit }) {
     get,
     loading: loadingCustomerList,
   } = useRestApi();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const sizeInput = isMobile ? "xs" : "sm";
 
   const form = useForm({
     mode: "uncontrolled",
@@ -112,9 +114,9 @@ export default function SupplierForm({ loading, onSubmit }) {
       ...form.getInputProps(`expenses.${index}.amount`),
     };
     return (
-      <Grid key={index}>
+      <Grid key={index} gutter="xs">
         <Grid.Col span="auto">
-          <Grid>
+          <Grid gutter="xs">
             <Grid.Col span="auto">
               <TextInput
                 placeholder="Tiêu đề"
@@ -122,6 +124,7 @@ export default function SupplierForm({ loading, onSubmit }) {
                 style={{ flex: 1 }}
                 key={form.key(`expenses.${index}.title`)}
                 {...form.getInputProps(`expenses.${index}.title`)}
+                size={sizeInput}
               />
             </Grid.Col>
             <Grid.Col span="auto">
@@ -136,6 +139,7 @@ export default function SupplierForm({ loading, onSubmit }) {
                   onChangeAmountField(value);
                   handleTotalPriceChange(index, "amount", value);
                 }}
+                size={sizeInput}
               />
             </Grid.Col>
             <Grid.Col span="auto">
@@ -151,6 +155,7 @@ export default function SupplierForm({ loading, onSubmit }) {
                   onChangePriceField(value);
                   handleTotalPriceChange(index, "price", value);
                 }}
+                size={sizeInput}
               />
             </Grid.Col>
             <Grid.Col span="auto">
@@ -169,6 +174,7 @@ export default function SupplierForm({ loading, onSubmit }) {
                   onChangeTaxField(value);
                   handleTotalPriceChange(index, "tax", value);
                 }}
+                size={sizeInput}
               />
             </Grid.Col>
             <Grid.Col span="auto">
@@ -181,6 +187,7 @@ export default function SupplierForm({ loading, onSubmit }) {
                 {...form.getInputProps(`expenses.${index}.total`)}
                 readOnly
                 hideControls
+                size={sizeInput}
               />
             </Grid.Col>
           </Grid>
@@ -216,6 +223,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           required
           maxDropdownHeight={200}
           searchable
+          size={sizeInput}
         />
 
         <NumberInput
@@ -225,6 +233,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           {...form.getInputProps("total")}
           required
           hideControls
+          size={sizeInput}
         />
 
         <NumberInput
@@ -238,10 +247,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           suffix="%"
           required
           hideControls
-          // onChange={(value) => {
-          //   onChangeTaxField(value);
-          //   handleTaxChange(index, value);
-          // }}
+          size={sizeInput}
         />
 
         <NumberInput
@@ -250,6 +256,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           thousandSeparator=","
           {...form.getInputProps("cash_back")}
           hideControls
+          size={sizeInput}
         />
 
         <DateInput
@@ -259,6 +266,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           {...form.getInputProps("signed_date")}
           required
           valueFormat="DD/MM/YYYY"
+          size={sizeInput}
         />
         <Text fw={600} mt="xs" size="sm">
           Danh sách chi phí
@@ -312,6 +320,7 @@ export default function SupplierForm({ loading, onSubmit }) {
                 key: randomId(),
               })
             }
+            size={sizeInput}
           >
             Thêm chi phí
           </Button>
@@ -320,7 +329,7 @@ export default function SupplierForm({ loading, onSubmit }) {
         <Space h="md" />
 
         <Group justify="right">
-          <Button loading={loading} type="submit">
+          <Button loading={loading} type="submit" size={sizeInput}>
             Nộp
           </Button>
         </Group>

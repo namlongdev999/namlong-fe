@@ -5,12 +5,17 @@ import {
 } from "@mantine/core";
 import "./globals.css";
 import "@mantine/core/styles.css";
-import '@mantine/dates/styles.css';
+import "@mantine/dates/styles.css";
 import { theme } from "./theme";
 
 export const metadata = {
-  title: "Dịch Vụ Nam Long",
+  title: "Giáo dục Nam Long",
   description: "Công ty Nam Long cung cấp dịch vụ giáo dục",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }) {

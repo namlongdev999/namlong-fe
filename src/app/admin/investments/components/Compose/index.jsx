@@ -15,7 +15,7 @@ import {
   LoadingOverlay,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { useDebouncedCallback } from "@mantine/hooks";
+import { useDebouncedCallback, useMediaQuery } from "@mantine/hooks";
 import { IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRestApi } from "../../../../../service/hook";
@@ -26,6 +26,8 @@ export default function SupplierForm({ loading, onSubmit }) {
     get,
     loading: loadingCustomerList,
   } = useRestApi();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const sizeInput = isMobile ? "xs" : "sm";
 
   const form = useForm({
     mode: "uncontrolled",
@@ -49,7 +51,7 @@ export default function SupplierForm({ loading, onSubmit }) {
   }, []);
 
   return (
-    <Container size="md">
+    <Container size={sizeInput}>
       <LoadingOverlay visible={loadingCustomerList || loading} />
       <form noValidate onSubmit={form.onSubmit(onSubmit)}>
         <Select
@@ -63,6 +65,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           required
           maxDropdownHeight={200}
           searchable
+          size={sizeInput}
         />
 
         <NumberInput
@@ -72,6 +75,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           {...form.getInputProps("investment_total")}
           required
           hideControls
+          size={sizeInput}
         />
 
         <DateInput
@@ -81,6 +85,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           {...form.getInputProps("from_date")}
           required
           valueFormat="DD/MM/YYYY"
+          size={sizeInput}
         />
         <DateInput
           label="Ngày kết thúc"
@@ -89,6 +94,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           {...form.getInputProps("to_date")}
           required
           valueFormat="DD/MM/YYYY"
+          size={sizeInput}
         />
 
         <Space h="md" />

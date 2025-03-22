@@ -77,6 +77,9 @@ const Invoices = () => {
   const [filters = { date: dayjs().format("YYYY-MM-DD") }, changeFilters]: any =
     useQueryParams(["date", "customer"]);
   const params = new URLSearchParams(filters).toString();
+  const [customerTax, setCustomerTax] = useState(
+    filters?.customer ?? undefined
+  );
 
   const handleClose = () => {
     close();
@@ -174,6 +177,7 @@ const Invoices = () => {
   };
 
   const handleChangeCustomer = (c) => {
+    setCustomerTax(c);
     changeFilters({ ...filters, customer: c });
   };
 
@@ -187,100 +191,105 @@ const Invoices = () => {
 
   return (
     <Layout>
-      <LoadingOverlay visible={loading || loadingCustomerList} />
-      <Flex direction="row" justify="space-between" align="center">
-        <Title className="text-blue-500">Danh sách hóa đơn</Title>
+      <div className="relative">
+        <LoadingOverlay visible={loading || loadingCustomerList} />
+        <Flex direction="row" justify="space-between" align="center">
+          <Title order={2} className="text-blue-500">
+            Danh sách hóa đơn
+          </Title>
 
-        {isMobile ? (
-          <ActionIcon
-            variant="outline"
-            size="lg"
-            aria-label="Create"
-            onClick={open}
+          {isMobile ? (
+            <ActionIcon
+              variant="outline"
+              size="lg"
+              aria-label="Create"
+              onClick={open}
+            >
+              <IconPlus />
+            </ActionIcon>
+          ) : (
+            <Button leftSection={<IconPlus />} variant="outline" onClick={open}>
+              Tạo mới
+            </Button>
+          )}
+        </Flex>
+        <Space h="md" />
+
+        <Flex gap="md" pos="relative">
+          <MonthPickerInput
+            label="Tháng ký HD"
+            monthsListFormat="MM"
+            valueFormat="MM/YYYY"
+            placeholder="Tháng ký HD"
+            defaultValue={dayjs(filters.date).toDate()}
+            onChange={handleChangeDate}
+          />
+          <Select
+            label="Tên khách hàng"
+            placeholder="Tên khách hàng"
+            data={customerList?.map((v) => ({
+              value: v.tax_number,
+              label: v.name,
+            }))}
+            value={customerTax}
+            onChange={handleChangeCustomer}
+            clearable
+            searchable
+          />
+        </Flex>
+        <Space h="md" />
+        <Flex gap="md">
+          <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
+            <Text size="sm">Tổng tiền</Text>
+            <Group gap="xs">
+              <NumberFormatter
+                suffix=" VND"
+                className="text-lg font-semibold text-red-500"
+                value={overviewData.total}
+                thousandSeparator
+                decimalScale={2}
+              />
+            </Group>
+          </Paper>
+          <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
+            <Text size="sm">Tổng tiền còn lại</Text>
+            <Group gap="xs">
+              <NumberFormatter
+                suffix=" VND"
+                className="text-lg font-semibold text-green-500"
+                value={overviewData.revenueTotal}
+                thousandSeparator
+                decimalScale={2}
+              />
+            </Group>
+          </Paper>
+        </Flex>
+        <Space h="md" />
+
+        <Table.ScrollContainer minWidth={1080} h={500}>
+          <Table
+            withTableBorder
+            stickyHeader
+            highlightOnHover
+            highlightOnHoverColor="#f0f9ff"
           >
-            <IconPlus />
-          </ActionIcon>
-        ) : (
-          <Button leftSection={<IconPlus />} variant="outline" onClick={open}>
-            Tạo mới hóa đơn
-          </Button>
-        )}
-      </Flex>
-      <Space h="md" />
-
-      <Flex gap="md" pos="relative">
-        <MonthPickerInput
-          label="Tháng ký HD"
-          monthsListFormat="MM"
-          valueFormat="MM/YYYY"
-          placeholder="Tháng ký HD"
-          defaultValue={dayjs(filters.date).toDate()}
-          onChange={handleChangeDate}
-        />
-        <Select
-          label="Tên khách hàng"
-          placeholder="Tên khách hàng"
-          data={customerList?.map((v) => ({
-            value: v.tax_number,
-            label: v.name,
-          }))}
-          value={filters?.customer}
-          onChange={handleChangeCustomer}
-          clearable
-        />
-      </Flex>
-      <Space h="md" />
-      <Flex gap="md">
-        <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
-          <Text size="sm">Tổng tiền</Text>
-          <Group gap="xs">
-            <NumberFormatter
-              suffix=" VND"
-              className="text-lg font-semibold text-red-500"
-              value={overviewData.total}
-              thousandSeparator
-              decimalScale={2}
-            />
-          </Group>
-        </Paper>
-        <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
-          <Text size="sm">Tổng tiền còn lại</Text>
-          <Group gap="xs">
-            <NumberFormatter
-              suffix=" VND"
-              className="text-lg font-semibold text-green-500"
-              value={overviewData.revenueTotal}
-              thousandSeparator
-              decimalScale={2}
-            />
-          </Group>
-        </Paper>
-      </Flex>
-      <Space h="md" />
-
-      <Table.ScrollContainer minWidth={1080} h={500}>
-        <Table
-          withTableBorder
-          stickyHeader
-          highlightOnHover
-          highlightOnHoverColor="#f0f9ff"
-        >
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th className="w-[240px]">Tên khách hàng</Table.Th>
-              <Table.Th className="w-[140px]">Tổng còn lại</Table.Th>
-              <Table.Th className="w-[140px]">Tổng tiền</Table.Th>
-              <Table.Th className="w-[140px]">Tiền thuế</Table.Th>
-              <Table.Th className="w-[140px]">Tổng chi phí</Table.Th>
-              <Table.Th className="w-[140px]">Gửi lại</Table.Th>
-              <Table.Th className="w-[100px] sticky right-0 z-10 bg-sky-50 !text-center">
-                Thao tác
-              </Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th className="w-[240px]">Tên khách hàng</Table.Th>
+                <Table.Th className="w-[140px]">Tổng còn lại</Table.Th>
+                <Table.Th className="w-[140px]">Tổng tiền</Table.Th>
+                <Table.Th className="w-[140px]">Tiền thuế</Table.Th>
+                <Table.Th className="w-[140px]">Tổng chi phí</Table.Th>
+                <Table.Th className="w-[140px]">Gửi lại</Table.Th>
+                <Table.Th className="w-[100px] sticky right-0 z-10 bg-sky-50 !text-center">
+                  Thao tác
+                </Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>{rows}</Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </div>
       <Modal
         opened={opened}
         onClose={handleClose}

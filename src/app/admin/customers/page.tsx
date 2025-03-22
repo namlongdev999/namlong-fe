@@ -1,16 +1,48 @@
 "use client";
 import React, { useEffect } from "react";
-import { Anchor, Flex, LoadingOverlay, Space, Table, Title } from "@mantine/core";
+import {
+  ActionIcon,
+  Anchor,
+  Button,
+  Flex,
+  LoadingOverlay,
+  Modal,
+  Space,
+  Table,
+  Text,
+  Title,
+} from "@mantine/core";
 import { useRestApi } from "../../../service/hook";
 import Layout from "../../../components/Layout";
 import Link from "next/link";
+import InvoiceForm from "./components/Compose";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
+import { IconPlus } from "@tabler/icons-react";
 
 const Invoices = () => {
-  const {
-    data: customerList,
-    get: getCutomerList,
-    loading: loadingCustomerList,
-  } = useRestApi();
+  const { data: customerList, get, loading, post } = useRestApi();
+  const [opened, { open, close }] = useDisclosure(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  const handleClose = () => {
+    close();
+  };
+
+  const handleSubmit = async (values) => {
+    try {
+      const { tax_number, name, address } = values;
+
+      await post("/customers", {
+        tax_number,
+        name,
+        address,
+      });
+      handleClose();
+      get("/customers");
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   const rows = customerList?.map((v) => {
     const expense = v.expenses?.reduce(
@@ -22,7 +54,7 @@ const Invoices = () => {
         <Table.Td>
           <Anchor
             component={Link}
-            href={`/admin/invoices?customer=${v.tax_number}`}
+            href={`/admin/investments?customer=${v.tax_number}`}
             underline="hover"
           >
             {v.tax_number}
@@ -35,34 +67,66 @@ const Invoices = () => {
   });
 
   useEffect(() => {
-    getCutomerList("/customers");
+    get("/customers");
   }, []);
 
   return (
     <Layout>
-      <LoadingOverlay visible={loadingCustomerList} />
-      <Flex direction="row" justify="space-between" align="center">
-        <Title className="text-blue-500">Danh sách khách hàng</Title>
-      </Flex>
-      <Space h="md" />
+      <div className="relative">
+        <LoadingOverlay visible={loading} />
+        <Flex direction="row" justify="space-between" align="center">
+          <Title order={2} className="text-blue-500">
+            Danh sách khách hàng
+          </Title>
 
-      <Table.ScrollContainer minWidth={600} h={500}>
-        <Table
-          withTableBorder
-          stickyHeader
-          highlightOnHover
-          highlightOnHoverColor="#f0f9ff"
-        >
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th className="w-[140px]">Mã số thuế</Table.Th>
-              <Table.Th className="w-[300px]">Tên khách hàng</Table.Th>
-              <Table.Th className="w-[140px]">Địa chỉ</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+          {isMobile ? (
+            <ActionIcon
+              variant="outline"
+              size="lg"
+              aria-label="Create"
+              onClick={open}
+            >
+              <IconPlus />
+            </ActionIcon>
+          ) : (
+            <Button leftSection={<IconPlus />} variant="outline" onClick={open}>
+              Tạo mới
+            </Button>
+          )}
+        </Flex>
+        <Space h="md" />
+
+        <Table.ScrollContainer minWidth={740} h={500}>
+          <Table
+            withTableBorder
+            stickyHeader
+            highlightOnHover
+            highlightOnHoverColor="#f0f9ff"
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th className="w-[140px]">Mã số thuế</Table.Th>
+                <Table.Th className="w-[300px]">Tên khách hàng</Table.Th>
+                <Table.Th className="w-[300px]">Địa chỉ</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>{rows}</Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </div>
+      <Modal
+        opened={opened}
+        onClose={handleClose}
+        title={
+          <Text c="blue" fw={700} size="lg">
+            Tạo mới
+          </Text>
+        }
+        fullScreen={!!isMobile}
+        size="80%"
+      >
+        <InvoiceForm loading={loading} onSubmit={handleSubmit} />
+      </Modal>
     </Layout>
   );
 };
