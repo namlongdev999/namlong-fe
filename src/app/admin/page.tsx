@@ -1,15 +1,17 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { login } from "./services";
 import { useRouter } from "next/navigation";
 
 const App = () => {
   const router = useRouter();
+  const [user, setUsername] = useState("");
+  const [pass, setPass] = useState("");
   const finish = async (values) => {
     values?.preventDefault();
 
     try {
-      await login({ username: "hai", password: "123456" });
+      await login({ username: user, password: pass });
       router.push("/admin/invoices");
     } catch {}
   };
@@ -35,6 +37,7 @@ const App = () => {
                   id="email"
                   className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="name@company.com"
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
               <div>
@@ -50,6 +53,7 @@ const App = () => {
                   id="password"
                   placeholder="••••••••"
                   className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  onChange={(e) => setPass(e.target.value)}
                 />
               </div>
               <button
