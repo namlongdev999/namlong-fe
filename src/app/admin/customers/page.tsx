@@ -12,7 +12,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { useRestApi } from "../../../service/hook";
+import { useMutation, useRestApi } from "../../../service/hook";
 import Layout from "../../../components/Layout";
 import Link from "next/link";
 import InvoiceForm from "./components/Compose";
@@ -20,7 +20,8 @@ import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { IconPlus } from "@tabler/icons-react";
 
 const Invoices = () => {
-  const { data: customerList, get, loading, post } = useRestApi();
+  const { data: customerList, get, loading } = useRestApi();
+  const { post, loading: loadingSubmit } = useMutation();
   const [opened, { open, close }] = useDisclosure(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -125,7 +126,7 @@ const Invoices = () => {
         fullScreen={!!isMobile}
         size="80%"
       >
-        <InvoiceForm loading={loading} onSubmit={handleSubmit} />
+        <InvoiceForm loading={loadingSubmit} onSubmit={handleSubmit} />
       </Modal>
     </Layout>
   );

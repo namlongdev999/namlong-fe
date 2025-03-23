@@ -1,64 +1,49 @@
 import {
-  IconAdjustments,
-  IconCalendarStats,
-  IconFileAnalytics,
-  IconFingerprint,
-  IconGauge,
-  IconLock,
-  IconNotes,
-  IconPresentationAnalytics,
+  IconFileDollar,
+  IconMoneybag,
+  IconUsersGroup,
 } from "@tabler/icons-react";
-import { Code, Group, NavLink, ScrollArea } from "@mantine/core";
+import { NavLink, ScrollArea } from "@mantine/core";
 import "./index.css";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-const mockdata = [
-  { label: "Dashboard", icon: IconGauge },
-  {
-    label: "Market news",
-    icon: IconNotes,
-    initiallyOpened: true,
-    links: [
-      { label: "Overview", link: "/" },
-      { label: "Forecasts", link: "/" },
-      { label: "Outlook", link: "/" },
-      { label: "Real time", link: "/" },
-    ],
-  },
-  {
-    label: "Releases",
-    icon: IconCalendarStats,
-    links: [
-      { label: "Upcoming releases", link: "/" },
-      { label: "Previous releases", link: "/" },
-      { label: "Releases schedule", link: "/" },
-    ],
-  },
-  { label: "Analytics", icon: IconPresentationAnalytics },
-  { label: "Contracts", icon: IconFileAnalytics },
-  { label: "Settings", icon: IconAdjustments },
-  {
-    label: "Security",
-    icon: IconLock,
-    links: [
-      { label: "Enable 2FA", link: "/" },
-      { label: "Change password", link: "/" },
-      { label: "Recovery codes", link: "/" },
-    ],
-  },
-];
+import { usePathname } from "next/navigation";
 
 export function NavbarNested() {
-  const { push } = useRouter();
-  // const links = mockdata.map((item) => <LinksGroup {...item} key={item.label} />);
+  const pathname = usePathname();
+
+  const navLinks = [
+    {
+      href: "/admin/invoices",
+      label: "Danh sách hóa đơn",
+      icon: <IconFileDollar size={16} />,
+    },
+    {
+      href: "/admin/investments",
+      label: "Danh sách đầu tư",
+      icon: <IconMoneybag size={16} />,
+    },
+    {
+      href: "/admin/customers",
+      label: "Danh sách khách hàng",
+      icon: <IconUsersGroup size={16} />,
+    },
+  ];
 
   return (
     <nav className="navbar">
       <ScrollArea className="links">
-          <NavLink href="/admin/invoices" label="Danh sách hóa đơn"  component={Link}/>
-          <NavLink href="/admin/investments" label="Danh sách đầu tư" component={Link}/>
-          <NavLink href="/admin/customers" label="Danh sách khách hàng" component={Link}/>
+        {navLinks.map((v) => (
+          <NavLink
+            className={`${
+              pathname === v.href ? "!bg-sky-100" : "hover:bg-gray-700"
+            }`}
+            key={v.href}
+            href={v.href}
+            label={v.label}
+            component={Link}
+            leftSection={v.icon}
+          />
+        ))}
         {/* <NavLink
           href="#required-for-focus"
           label="First parent link"

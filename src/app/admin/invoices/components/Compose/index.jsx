@@ -22,7 +22,7 @@ import dayjs from "dayjs";
 import { useRestApi } from "../../../../../service/hook";
 import RestAPI from "../../../../../service";
 
-export default function SupplierForm({ loading, onSubmit }) {
+export default function ComposeForm({ data, loading, onSubmit }) {
   const {
     data: customerList,
     get,
@@ -31,31 +31,59 @@ export default function SupplierForm({ loading, onSubmit }) {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const sizeInput = isMobile ? "xs" : "sm";
 
+  const isEdit = !!data?._id;
+
+  const defaultValue = data
+    ? {
+        id: data._id,
+        customer: data?.customer_tax,
+        total: data?.total ?? 0,
+        tax: data?.tax ?? 10,
+        cash_back: data?.cash_back ?? 10,
+        signed_date: data?.signed_date
+          ? dayjs(data.signed_date).toDate()
+          : dayjs().toDate(),
+        expenses: data?.expenses?.map((v) => ({
+          title: v.title,
+          desc: v.desc,
+          amount: v.amount,
+          price: v.price,
+          tax: v.tax,
+          total: v.price * v.amount,
+          total_receive:
+            v.price * v.amount - v.price * v.amount * (v.tax / 100),
+          id: v._id,
+        })),
+      }
+    : {
+        customer: "",
+        total: 0,
+        tax: 10,
+        cash_back: 10,
+        signed_date: dayjs().toDate(),
+        expenses: [
+          {
+            title: "",
+            desc: "",
+            amount: 0,
+            price: 120000,
+            tax: 10,
+            total: 0,
+            total_receive: 0,
+            key: randomId(),
+          },
+        ],
+      };
+
   const form = useForm({
     mode: "uncontrolled",
-    initialValues: {
-      customer: "",
-      total: 0,
-      tax: 10,
-      cash_back: 0,
-      signed_date: dayjs().toDate(),
-      expenses: [
-        {
-          title: "",
-          desc: "",
-          amount: 0,
-          price: 0,
-          tax: 10,
-          total: undefined,
-          key: randomId(),
-        },
-      ],
-    },
+    initialValues: defaultValue,
 
     validate: {
       customer: (value) => (value ? null : "Vui lòng nhập"),
       total: (value) => (value > 0 ? null : "Không hợp lê"),
-      tax: (value) => (value >= 0 ? null : "Không hợp lê"),
+      tax: (value) => (value != undefined && value >= 0 ? null : "Không hợp lê"),
+      cash_back: (value) => (value != undefined && value >= 0 ? null : "Không hợp lê"),
       signed_date: (value) => (value ? null : "Vui lòng nhập"),
       expenses: {
         title: (value) => (value ? null : "Vui lòng nhập"),
@@ -63,16 +91,6 @@ export default function SupplierForm({ loading, onSubmit }) {
         amount: (value) => (value > 0 ? null : "Không hợp lê"),
       },
     },
-    // onValuesChange: (value, a) => {
-    //   console.log(value, a);
-
-    // },
-    // transformValues: (values) => ({
-    //   expenses: values.expenses.map((item) => ({
-    //     ...item,
-    //     total1: item.price, // Transform input2 based on input1
-    //   })),
-    // }),
   });
 
   const handleTotalPriceChange = useDebouncedCallback((index, key, value) => {
@@ -82,19 +100,21 @@ export default function SupplierForm({ loading, onSubmit }) {
     switch (key) {
       case "amount":
         form.setFieldValue(
-          `expenses.${index}.total`,
+          `expenses.${index}.total_receive`,
           value * price - value * price * (tax / 100)
         );
+        form.setFieldValue(`expenses.${index}.total`, value * price);
         break;
       case "price":
         form.setFieldValue(
-          `expenses.${index}.total`,
+          `expenses.${index}.total_receive`,
           value * amount - value * amount * (tax / 100)
         );
+        form.setFieldValue(`expenses.${index}.total`, value * amount);
         break;
       case "tax":
         form.setFieldValue(
-          `expenses.${index}.total`,
+          `expenses.${index}.total_receive`,
           price * amount - price * amount * (value / 100)
         );
         break;
@@ -119,7 +139,6 @@ export default function SupplierForm({ loading, onSubmit }) {
           <Grid gutter="xs">
             <Grid.Col span="auto">
               <TextInput
-                placeholder="Tiêu đề"
                 withAsterisk
                 style={{ flex: 1 }}
                 key={form.key(`expenses.${index}.title`)}
@@ -129,7 +148,6 @@ export default function SupplierForm({ loading, onSubmit }) {
             </Grid.Col>
             <Grid.Col span="auto">
               <NumberInput
-                placeholder="Số lượng"
                 thousandSeparator=","
                 withAsterisk
                 style={{ flex: 1 }}
@@ -144,7 +162,6 @@ export default function SupplierForm({ loading, onSubmit }) {
             </Grid.Col>
             <Grid.Col span="auto">
               <NumberInput
-                placeholder="Tiền"
                 thousandSeparator=","
                 withAsterisk
                 style={{ flex: 1 }}
@@ -160,7 +177,18 @@ export default function SupplierForm({ loading, onSubmit }) {
             </Grid.Col>
             <Grid.Col span="auto">
               <NumberInput
-                placeholder="Thuế"
+                thousandSeparator=","
+                withAsterisk
+                style={{ flex: 1 }}
+                key={form.key(`expenses.${index}.total`)}
+                {...form.getInputProps(`expenses.${index}.total`)}
+                readOnly
+                hideControls
+                size={sizeInput}
+              />
+            </Grid.Col>
+            <Grid.Col span="auto">
+              <NumberInput
                 thousandSeparator=","
                 withAsterisk
                 style={{ flex: 1 }}
@@ -179,12 +207,11 @@ export default function SupplierForm({ loading, onSubmit }) {
             </Grid.Col>
             <Grid.Col span="auto">
               <NumberInput
-                placeholder="Tổng"
                 thousandSeparator=","
                 withAsterisk
                 style={{ flex: 1 }}
-                key={form.key(`expenses.${index}.total`)}
-                {...form.getInputProps(`expenses.${index}.total`)}
+                key={form.key(`expenses.${index}.total_receive`)}
+                {...form.getInputProps(`expenses.${index}.total_receive`)}
                 readOnly
                 hideControls
                 size={sizeInput}
@@ -205,17 +232,21 @@ export default function SupplierForm({ loading, onSubmit }) {
   });
 
   useEffect(() => {
-    get("/customers");
+    !data && get("/customers");
   }, []);
+
+  const customerListDefault = data
+    ? [{ tax_number: data.customer_tax, name: data.customer_name }]
+    : customerList;
 
   return (
     <Container size="md">
-      <LoadingOverlay visible={loadingCustomerList || loading} />
+      <LoadingOverlay visible={(!data && loadingCustomerList) || loading} />
       <form noValidate onSubmit={form.onSubmit(onSubmit)}>
         <Select
           label="Tên khách hàng"
           placeholder="Tên khách hàng"
-          data={customerList?.map((v) => ({
+          data={customerListDefault?.map((v) => ({
             value: v.tax_number,
             label: v.name,
           }))}
@@ -224,6 +255,7 @@ export default function SupplierForm({ loading, onSubmit }) {
           maxDropdownHeight={200}
           searchable
           size={sizeInput}
+          disabled={isEdit}
         />
 
         <NumberInput
@@ -237,24 +269,23 @@ export default function SupplierForm({ loading, onSubmit }) {
         />
 
         <NumberInput
-          label="Thuế"
-          placeholder="Nhập số tiền"
-          thousandSeparator=","
+          label="Thuế VAT (%)"
           style={{ flex: 1 }}
           {...form.getInputProps("tax")}
           min={0}
           max={100}
           suffix="%"
-          required
           hideControls
           size={sizeInput}
         />
 
         <NumberInput
-          label="Gửi lại"
-          placeholder="Nhập số tiền"
-          thousandSeparator=","
+          label="Gửi lại (%)"
+          style={{ flex: 1 }}
           {...form.getInputProps("cash_back")}
+          min={0}
+          max={100}
+          suffix="%"
           hideControls
           size={sizeInput}
         />
@@ -276,27 +307,32 @@ export default function SupplierForm({ loading, onSubmit }) {
             <Grid>
               <Grid.Col span="auto">
                 <Text mt="xs" size="sm">
-                  Tiêu đề
+                  Tên nhân viên
                 </Text>
               </Grid.Col>
               <Grid.Col span="auto">
                 <Text mt="xs" size="sm">
-                  Số lượng
+                  Số tiết
                 </Text>
               </Grid.Col>
               <Grid.Col span="auto">
                 <Text mt="xs" size="sm">
-                  Tiền
+                  Lương theo tiết
                 </Text>
               </Grid.Col>
               <Grid.Col span="auto">
                 <Text mt="xs" size="sm">
-                  Thuế
+                  Tổng lương
                 </Text>
               </Grid.Col>
               <Grid.Col span="auto">
                 <Text mt="xs" size="sm">
-                  Tổng
+                  Thuế TNCN
+                </Text>
+              </Grid.Col>
+              <Grid.Col span="auto">
+                <Text mt="xs" size="sm">
+                  Tổng lương nhận
                 </Text>
               </Grid.Col>
             </Grid>
@@ -313,10 +349,11 @@ export default function SupplierForm({ loading, onSubmit }) {
               form.insertListItem("expenses", {
                 title: "",
                 desc: "",
-                price: 0,
+                price: 120000,
                 tax: 10,
                 amount: 0,
                 total: 0,
+                total_receive: 0,
                 key: randomId(),
               })
             }

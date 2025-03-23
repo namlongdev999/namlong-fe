@@ -18,10 +18,7 @@ export default function Detail({ data }) {
   } = data;
 
   // const expense = expenses?.reduce((t, r) => t + (r.expense ?? 0), 0);
-  const expense = expenses?.reduce(
-    (t, r) => t + (r.amount * r.price - r.amount * r.price * (r.tax / 100)),
-    0
-  );
+  const expense = expenses?.reduce((t, r) => t + r.amount * r.price, 0);
 
   return (
     <Grid gutter="xs">
@@ -75,10 +72,10 @@ export default function Detail({ data }) {
       </Grid.Col>
 
       <Grid.Col span={6}>
-        <Text className="text-gray-600">Gửi lại:</Text>
+        <Text className="text-gray-600">Tiền gửi lại:</Text>
         <Text fw={700} className="font-medium text-green-600">
           <NumberFormatter
-            value={cash_back}
+            value={(total * cash_back) / 100}
             thousandSeparator
             decimalScale={2}
           />{" "}
@@ -91,11 +88,12 @@ export default function Detail({ data }) {
         <Table striped highlightOnHover withTableBorder withColumnBorders>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Tiêu đề</Table.Th>
-              <Table.Th>Số lượng</Table.Th>
-              <Table.Th>Tiền</Table.Th>
-              <Table.Th>Thuế</Table.Th>
-              <Table.Th>Tổng sau thuế</Table.Th>
+              <Table.Th>Tên nhân viên</Table.Th>
+              <Table.Th>Số tiết</Table.Th>
+              <Table.Th>Lương theo tiết</Table.Th>
+              <Table.Th>Tổng lương</Table.Th>
+              <Table.Th>Thuế TNCN</Table.Th>
+              <Table.Th>Tổng lương nhận</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -119,10 +117,18 @@ export default function Detail({ data }) {
                 </Table.Td>
                 <Table.Td>
                   <NumberFormatter
-                    value={v.tax}
+                    value={v.amount * v.price}
                     thousandSeparator
                     decimalScale={2}
                   />{" "}
+                  VND
+                </Table.Td>
+                <Table.Td>
+                  <NumberFormatter
+                    value={v.tax}
+                    thousandSeparator
+                    decimalScale={2}
+                  />
                   %
                 </Table.Td>
                 <Table.Td>
@@ -141,10 +147,12 @@ export default function Detail({ data }) {
         </Table>
       </Grid.Col>
       <Grid.Col className="text-right" span={12}>
-        <Text className="text-gray-600">Tổng còn lại:</Text>
+        <Text className="text-gray-600">Tổng doanh thu:</Text>
         <Text fw={700} className="!text-xl !text-green-600">
           <NumberFormatter
-            value={total - (total * tax) / 100 - expense - cash_back}
+            value={
+              total - (total * tax) / 100 - expense - (total * cash_back) / 100
+            }
             thousandSeparator
             decimalScale={2}
           />{" "}

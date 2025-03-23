@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import InvoiceForm from "./components/Compose";
 import {
   ActionIcon,
@@ -20,7 +20,7 @@ import {
 } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import { useRestApi } from "../../../service/hook";
+import { useMutation, useRestApi } from "../../../service/hook";
 import Layout from "../../../components/Layout";
 import { useQueryParams } from "../../../hooks/useQueryParams";
 import dayjs from "dayjs";
@@ -28,10 +28,11 @@ import { useMediaQuery } from "@mantine/hooks";
 import Detail from "./components/Detail";
 import { MonthPickerInput } from "@mantine/dates";
 import localizedFormat from "dayjs/plugin/localizedFormat";
+import { modals } from "@mantine/modals";
 
 dayjs.extend(localizedFormat);
 
-const Action = ({ onDetail, onEdit }) => {
+const Action = ({ onDetail, onEdit, onDelete }) => {
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -41,13 +42,12 @@ const Action = ({ onDetail, onEdit }) => {
         combobox.closeDropdown();
       }}
       store={combobox}
-      size="xs"
     >
       <Combobox.Target>
         <Button
           size="xs"
-          onClick={onDetail}
-          //  onClick={() => combobox.toggleDropdown()}
+          // onClick={onDetail}
+          onClick={() => combobox.toggleDropdown()}
         >
           Xem
         </Button>
@@ -57,9 +57,12 @@ const Action = ({ onDetail, onEdit }) => {
         <Combobox.Option onClick={onDetail} value="detail">
           Chi tiết
         </Combobox.Option>
-        {/* <Combobox.Option onClick={onEdit} value="edit">
+        <Combobox.Option onClick={onEdit} value="edit">
           Sửa
-        </Combobox.Option> */}
+        </Combobox.Option>
+        <Combobox.Option onClick={onDelete} value="delete">
+          Xóa
+        </Combobox.Option>
       </Combobox.Dropdown>
     </Combobox>
   );
@@ -67,15 +70,15 @@ const Action = ({ onDetail, onEdit }) => {
 const Invoices = () => {
   const [opened, { open, close }] = useDisclosure(false);
   const [logData, handleLogData] = useState({ type: "", data: undefined });
-  const { data, get, post, loading } = useRestApi();
+  const { data, get, loading } = useRestApi();
+  const { post, put, deleteItem, loading: loadingSubmit } = useMutation();
   const {
     data: customerList,
     get: getCutomerList,
     loading: loadingCustomerList,
   } = useRestApi();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const [filters = { date: dayjs().format("YYYY-MM-DD") }, changeFilters]: any =
-    useQueryParams(["date", "customer"]);
+  const [filters, changeFilters]: any = useQueryParams(["date", "customer"]);
   const params = new URLSearchParams(filters).toString();
   const [customerTax, setCustomerTax] = useState(
     filters?.customer ?? undefined
@@ -88,22 +91,41 @@ const Invoices = () => {
 
   const handleSubmit = async (values) => {
     try {
-      const { cash_back, customer, signed_date, tax, total, expenses } = values;
+      const { cash_back, customer, signed_date, tax, total, expenses, id } =
+        values;
 
-      await post("/invoices", {
-        customer,
-        total,
-        tax,
-        cash_back,
-        signed_date: dayjs(signed_date).toISOString(),
-        expenses: expenses.map((v) => ({
-          title: v.title,
-          desc: v.desc,
-          amount: v.amount,
-          price: v.price,
-          tax: v.tax,
-        })),
-      });
+      if (id) {
+        await put(`/invoices/${id}`, {
+          customer,
+          total,
+          tax,
+          cash_back,
+          signed_date: dayjs(signed_date).toISOString(),
+          expenses: expenses.map((v) => ({
+            title: v.title,
+            desc: v.desc,
+            amount: v.amount,
+            price: v.price,
+            tax: v.tax,
+          })),
+        });
+      } else {
+        await post("/invoices", {
+          customer,
+          total,
+          tax,
+          cash_back,
+          signed_date: dayjs(signed_date).toISOString(),
+          expenses: expenses.map((v) => ({
+            title: v.title,
+            desc: v.desc,
+            amount: v.amount,
+            price: v.price,
+            tax: v.tax,
+          })),
+        });
+      }
+
       handleClose();
       get("/invoices");
     } catch (e) {
@@ -111,11 +133,26 @@ const Invoices = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await deleteItem(`/invoices/${id}`);
+      get("/invoices");
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const openModalDelete = (id) =>
+    modals.openConfirmModal({
+      title: "Bạn có chắc chắn xóa?",
+      centered: true,
+      confirmProps: { color: "red" },
+      labels: { confirm: "Xác nhận", cancel: "Hủy" },
+      onConfirm: () => handleDelete(id),
+    });
+
   const rows = data?.map((v) => {
-    const expense = v.expenses?.reduce(
-      (t, r) => t + (r.amount * r.price - r.amount * r.price * (r.tax / 100)),
-      0
-    );
+    const expense = v.expenses?.reduce((t, r) => t + r.amount * r.price, 0);
     return (
       <Table.Tr key={v._id}>
         <Table.Td>{v.customer_name}</Table.Td>
@@ -142,18 +179,23 @@ const Invoices = () => {
         </Table.Td>
         <Table.Td>
           <NumberFormatter
-            value={v.cash_back}
+            value={v.total * (v.cash_back / 100)}
             thousandSeparator
             decimalScale={2}
           />
         </Table.Td>
+        <Table.Td>{dayjs(v.signed_date).format("DD/MM/YYYY")}</Table.Td>
         <Table.Td className="sticky right-0 z-10 bg-sky-50 text-center">
           <Action
             onDetail={() => {
               open();
               handleLogData({ type: "detail", data: v });
             }}
-            onEdit={() => handleLogData({ type: "edit", data: v })}
+            onEdit={() => {
+              open();
+              handleLogData({ type: "edit", data: v });
+            }}
+            onDelete={() => openModalDelete(v._id)}
           />
         </Table.Td>
       </Table.Tr>
@@ -173,7 +215,10 @@ const Invoices = () => {
   }, [JSON.stringify(data)]);
 
   const handleChangeDate = (d) => {
-    changeFilters({ ...filters, date: dayjs(d).format("YYYY-MM-DD") });
+    changeFilters({
+      ...filters,
+      date: d ? dayjs(d).format("YYYY-MM-DD") : "",
+    });
   };
 
   const handleChangeCustomer = (c) => {
@@ -221,8 +266,11 @@ const Invoices = () => {
             monthsListFormat="MM"
             valueFormat="MM/YYYY"
             placeholder="Tháng ký HD"
-            defaultValue={dayjs(filters.date).toDate()}
+            defaultValue={
+              filters.date ? dayjs(filters.date).toDate() : undefined
+            }
             onChange={handleChangeDate}
+            clearable
           />
           <Select
             label="Tên khách hàng"
@@ -252,7 +300,7 @@ const Invoices = () => {
             </Group>
           </Paper>
           <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
-            <Text size="sm">Tổng tiền còn lại</Text>
+            <Text size="sm">Tổng doanh thua</Text>
             <Group gap="xs">
               <NumberFormatter
                 suffix=" VND"
@@ -266,7 +314,7 @@ const Invoices = () => {
         </Flex>
         <Space h="md" />
 
-        <Table.ScrollContainer minWidth={1080} h={500}>
+        <Table.ScrollContainer minWidth={1080} h={400}>
           <Table
             withTableBorder
             stickyHeader
@@ -276,11 +324,12 @@ const Invoices = () => {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th className="w-[240px]">Tên khách hàng</Table.Th>
-                <Table.Th className="w-[140px]">Tổng còn lại</Table.Th>
+                <Table.Th className="w-[140px]">Tổng doanh thua</Table.Th>
                 <Table.Th className="w-[140px]">Tổng tiền</Table.Th>
                 <Table.Th className="w-[140px]">Tiền thuế</Table.Th>
                 <Table.Th className="w-[140px]">Tổng chi phí</Table.Th>
                 <Table.Th className="w-[140px]">Gửi lại</Table.Th>
+                <Table.Th className="w-[120px]">Ngày ký</Table.Th>
                 <Table.Th className="w-[100px] sticky right-0 z-10 bg-sky-50 !text-center">
                   Thao tác
                 </Table.Th>
@@ -295,7 +344,11 @@ const Invoices = () => {
         onClose={handleClose}
         title={
           <Text c="blue" fw={700} size="lg">
-            {logData.type === "detail" ? "Chi tiết nội dung" : "Tạo mới"}
+            {logData.type === "detail"
+              ? "Chi tiết nội dung"
+              : logData.type === "edit"
+              ? "Sửa"
+              : "Tạo mới"}
           </Text>
         }
         fullScreen={!!isMobile}
@@ -304,7 +357,11 @@ const Invoices = () => {
         {logData.type === "detail" ? (
           <Detail data={logData.data} />
         ) : (
-          <InvoiceForm loading={loading} onSubmit={handleSubmit} />
+          <InvoiceForm
+            data={logData.data}
+            loading={loadingSubmit}
+            onSubmit={handleSubmit}
+          />
         )}
       </Modal>
     </Layout>

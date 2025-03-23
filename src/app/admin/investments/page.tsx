@@ -17,7 +17,7 @@ import {
 } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import { useRestApi } from "../../../service/hook";
+import { useMutation, useRestApi } from "../../../service/hook";
 import Layout from "../../../components/Layout";
 import { useQueryParams } from "../../../hooks/useQueryParams";
 import dayjs from "dayjs";
@@ -29,7 +29,8 @@ dayjs.extend(localizedFormat);
 
 const Invoices = () => {
   const [opened, { open, close }] = useDisclosure(false);
-  const { data, get, post, loading } = useRestApi();
+  const { data, get, loading } = useRestApi();
+  const { post, loading: loadingSubmit } = useMutation();
   const {
     data: customerList,
     get: getCutomerList,
@@ -186,7 +187,7 @@ const Invoices = () => {
         fullScreen={!!isMobile}
         size="80%"
       >
-        <InvoiceForm loading={loading} onSubmit={handleSubmit} />
+        <InvoiceForm loading={loadingSubmit} onSubmit={handleSubmit} />
       </Modal>
     </Layout>
   );
