@@ -300,7 +300,7 @@ const Invoices = () => {
             </Group>
           </Paper>
           <Paper shadow="xs" withBorder p="xs" radius="md" className="w-52">
-            <Text size="sm">Tổng doanh thua</Text>
+            <Text size="sm">Tổng doanh thu</Text>
             <Group gap="xs">
               <NumberFormatter
                 suffix=" VND"
@@ -324,7 +324,7 @@ const Invoices = () => {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th className="w-[240px]">Tên khách hàng</Table.Th>
-                <Table.Th className="w-[140px]">Tổng doanh thua</Table.Th>
+                <Table.Th className="w-[140px]">Tổng doanh thu</Table.Th>
                 <Table.Th className="w-[140px]">Tổng tiền</Table.Th>
                 <Table.Th className="w-[140px]">Tiền thuế</Table.Th>
                 <Table.Th className="w-[140px]">Tổng chi phí</Table.Th>

@@ -11,6 +11,9 @@ import { theme } from "./theme";
 export const metadata = {
   title: "Giáo dục Nam Long",
   description: "Công ty Nam Long cung cấp dịch vụ giáo dục",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export const viewport = {
